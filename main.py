@@ -27,10 +27,11 @@ def networking( ):
             if(not (ip_table.get(key, None) is None)):
                 listener.sendto(b'hello', ip_table[key])
                 while(len(req_table[key])):
+                    pass
                     # do smthg
-                    req_table[key] = req_table[key][1:]
+                    # req_table[key] = req_table[key][1:]
 
-                #for query in req_table[key]:
+                # for query in req_table[key]:
                 #     listener.sendto('hello', ip_table[key])
 
         events = socketManager.select(timeout = None)

@@ -11,7 +11,15 @@ req_table = { }
 
 #socketManager = selectors.DefaultSelector(  )
 listener = socket.socket( family = socket.AF_INET, type = socket.SOCK_DGRAM )
-listener.bind((selfIp, selfPort))
+listener.bind(("", selfPort))
+
+client = ("106.201.123.139", selfPort) # Replace with your router public IP
+# print("punching")
+listener.sendto(b'', client)
+data, addr = listener.recvfrom(BUFSIZ)
+print(addr)
+listener.sendto(b'', client)
+# print("punched")
 
 listener.setblocking(False)
 
@@ -26,24 +34,26 @@ def networking( ):
         for key in req_table:
             if(not (ip_table.get(key, None) is None)):
                 for query in req_table[key]:
-                    msg = req_table[key][0] + ';' + req_table[key][1]
-                    if(req_table[key][0] == 'create'):
-                        for UID in req_table[key][2]:
+                    print(query)
+                    msg = query[0] + ';' + query[1]
+                    if(query[0] == 'create'):
+                        for UID in query[2]:
                             msg += ';' + UID
 
-                    elif(req_table[key][0] == 'remove'):
-                        msg += ';' + req_table[key][2]
+                    elif(query[0] == 'remove'):
+                        msg += ';' + query[2]
 
-                    if(req_table[key][0] == 'recv'):
-                        pass
+                    if(query[0] == 'recv'):
+                        msg += ';' + 'arandomthing'
 
                     listener.sendto(msg.encode('utf8'), ip_table[key])
 
-                del req_table[key]
+                del query
 
         events = socketManager.select(timeout = None)
         for(key, mask) in events:
             msg, addr = listener.recvfrom(BUFSIZ)
+            if not msg : continue
             msg = (msg.decode()).split(';')
 
             sender = msg[0] # This is the UID of the sender

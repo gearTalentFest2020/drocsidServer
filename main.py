@@ -25,14 +25,21 @@ def networking( ):
 
         for key in req_table:
             if(not (ip_table.get(key, None) is None)):
-                listener.sendto(b'hello', ip_table[key])
-                while(len(req_table[key])):
-                    pass
-                    # do smthg
-                    # req_table[key] = req_table[key][1:]
+                for query in req_table[key]:
+                    msg = req_table[key][0] + ';' + req_table[key][1]
+                    if(req_table[key][0] == 'create'):
+                        for UID in req_table[key][2]:
+                            msg += ';' + UID
 
-                # for query in req_table[key]:
-                #     listener.sendto('hello', ip_table[key])
+                    elif(req_table[key][0] == 'remove'):
+                        msg += ';' + req_table[key][2]
+
+                    if(req_table[key][0] == 'recv'):
+                        pass
+
+                    listener.sendto(msg.encode('utf8'), ip_table[key])
+
+                del req_table[key]
 
         events = socketManager.select(timeout = None)
         for(key, mask) in events:

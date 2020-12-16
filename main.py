@@ -13,61 +13,76 @@ req_table = { }
 listener = socket.socket( family = socket.AF_INET, type = socket.SOCK_DGRAM )
 listener.bind((selfIp, selfPort))
 
+listener.setblocking(False)
+
+socketManager = selectors.DefaultSelector()
+socketManager.register(listener, selectors.EVENT_READ, True)
+
 print('I am', (selfIp, selfPort))
 
 def networking( ):
     while True:
-        msg, addr = listener.recvfrom(BUFSIZ)
-        msg = (msg.decode()).split(';')
 
-        sender = msg[0] # This is the UID of the sender
-        query = msg[1] # This is the actual query of the user
+        for key in req_table:
+            if(not (ip_table.get(key, None) is None)):
+                listener.sendto(b'hello', ip_table[key])
+                while(len(req_table[key])):
+                    # do smthg
+                    req_table[key] = req_table[key][1:]
 
-        # Add phone number to table
-        if(query == 'online'):
-            ip_table.setdefault(sender, addr)
-            print(ip_table)
+                #for query in req_table[key]:
+                #     listener.sendto('hello', ip_table[key])
 
-        # Remove phone number to table
-        elif(query == 'ofline'):
-            ip_table.pop(sender)
-            print(ip_table)
+        events = socketManager.select(timeout = None)
+        for(key, mask) in events:
+            msg, addr = listener.recvfrom(BUFSIZ)
+            msg = (msg.decode()).split(';')
 
-        # Create a chatroom with a certain name for a certain user
-        elif(query == 'create'):
+            sender = msg[0] # This is the UID of the sender
+            query = msg[1] # This is the actual query of the user
 
-            target = msg[2]
-            name = msg[3]
+            # Add phone number to table
+            if(query == 'online'):
+                ip_table.setdefault(sender, addr)
+                print(ip_table)
 
-            UIDs = [sender]
-            for UID in msg[4:]: UIDs.append(UID)
+            # Remove phone number to table
+            elif(query == 'ofline'):
+                ip_table.pop(sender)
+                print(ip_table)
 
-            if(req_table.get(target, None) is None):
-                req_table[target] = []
-            req_table[target].append(['create', name, UIDs])
+            # Create a chatroom with a certain name for a certain user
+            elif(query == 'create'):
 
-        # Remove a person from the chatroom of other people
-        elif(query == 'remove'):
+                target = msg[2]
+                name = msg[3]
 
-            target = msg[2]
-            name = msg[3]
+                UIDs = [sender]
+                for UID in msg[4:]: UIDs.append(UID)
 
-            if(req_table.get(target, None) is None):
-                req_table[target] = []
-            req_table[target].append(['remove', name, sender])
+                if(req_table.get(target, None) is None):
+                    req_table[target] = []
+                req_table[target].append(['create', name, UIDs])
 
-        # Send a message to a person on a particular chatroom
-        elif(query == 'send'):
+            # Remove a person from the chatroom of other people
+            elif(query == 'remove'):
 
-            target = msg[2]
-            name = msg[3]
-            data = msg[4]
+                target = msg[2]
+                name = msg[3]
 
-            if(req_table.get(target, None) is None):
-                req_table[target] = []
-            req_table[target].append(['recv', name, sender, data])
+                if(req_table.get(target, None) is None):
+                    req_table[target] = []
+                req_table[target].append(['remove', name, sender])
 
-def finishRequests( ):
-    pass
+            # Send a message to a person on a particular chatroom
+            elif(query == 'send'):
+
+                target = msg[2]
+                name = msg[3]
+                data = msg[4]
+
+                if(req_table.get(target, None) is None):
+                    req_table[target] = []
+                req_table[target].append(['recv', name, sender, data])
 
 networking( )

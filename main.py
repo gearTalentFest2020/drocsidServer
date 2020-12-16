@@ -15,33 +15,56 @@ listener.bind((selfIp, selfPort))
 
 print('I am', (selfIp, selfPort))
 
-while True:
-    msg, addr = listener.recvfrom(BUFSIZ)
-    msg = msg.split(';')
+def networking( ):
+    while True:
+        msg, addr = listener.recvfrom(BUFSIZ)
+        msg = (msg.decode()).split(';')
 
-    sender = msg[0] # This is the UID of the sender
-    query = msg[1] # This is the actual query of the user
+        sender = msg[0] # This is the UID of the sender
+        query = msg[1] # This is the actual query of the user
 
-    # Add phone number to table
-    if(query == 'online'):
-        ip_table.setdefault(sender, addr)
-        print(ip_table)
+        # Add phone number to table
+        if(query == 'online'):
+            ip_table.setdefault(sender, addr)
+            print(ip_table)
 
-    # Remove phone number to table
-    elif(query == 'ofline'):
-        ip_table.pop(sender)
-        print(ip_table)
+        # Remove phone number to table
+        elif(query == 'ofline'):
+            ip_table.pop(sender)
+            print(ip_table)
 
-    # Create a chatroom with a certain name for a certain user
-    elif(query == 'create'):
-        target = msg[2]
-        name = msg[3]
+        # Create a chatroom with a certain name for a certain user
+        elif(query == 'create'):
 
-    elif(query == 'remove'):
-        target = msg[2]
-        name = msg[3]
+            target = msg[2]
+            name = msg[3]
 
-    elif(query == 'send'):
-        target = msg[2]
-        name = msg[3]
-        data = msg[4]
+            UIDs = [sender]
+            for UID in msg[4:]: UIDs.append(UID)
+
+            if(req_table.get(target, None) is None):
+                req_table[target] = []
+            req_table[target].append(['create', name, UIDs])
+
+        # Remove a person from the chatroom of other people
+        elif(query == 'remove'):
+
+            target = msg[2]
+            name = msg[3]
+
+            if(req_table.get(target, None) is None):
+                req_table[target] = []
+            req_table[target].append(['remove', name, sender])
+
+        # Send a message to a person on a particular chatroom
+        elif(query == 'send'):
+
+            target = msg[2]
+            name = msg[3]
+            data = msg[4]
+
+            if(req_table.get(target, None) is None):
+                req_table[target] = []
+            req_table[target].append(['recv', name, sender, data])
+
+networking( )

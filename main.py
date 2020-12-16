@@ -67,4 +67,7 @@ def networking( ):
                 req_table[target] = []
             req_table[target].append(['recv', name, sender, data])
 
+def finishRequests( ):
+    pass
+
 networking( )
